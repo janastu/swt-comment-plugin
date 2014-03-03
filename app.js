@@ -11,12 +11,14 @@
   var Comment = Backbone.Model.extend({
     /* A model representing a comment. */
     defaults: function(){
-    return {
-      what: C.what,
-      where: window.location.href,
-      how:{
-          comment:''
-      }
+      return {
+        'who':'',
+        'what': C.what,
+        'where': window.location.href,
+        'how':{
+          'comment':'',
+          'replyTo':''
+        }
       };
     },
     url: "http://127.0.0.1:5001/sweets",
@@ -75,9 +77,6 @@
       "click .save": "save"
     },
     initialize: function(){
-      // _.bindAll.apply(_, [this].concat(_.functions(this)));
-      // _.bind(this.render, this);
-      //      this.listenTo(this.model, "change", this.render);
       this.render();
     },
 
@@ -88,8 +87,9 @@
     save: function(e){
       /* Create a sweet and send it to the sweet store.
        Update the view to include the comment */
-      this.model.set({how:{comment:this.$("textarea.form-control").val(),
-                          replyTo:this.model.get('how')['replyTo']}});
+      e.preventDefault();
+      this.model.set({'how':{'comment':this.$("textarea.form-control").val(),
+                             'replyTo':this.model.get('how')['replyTo']}});
       this.model.set({created: new Date().toUTCString().substr(0, 25)});
       new LoginView({model:this.model});
 
@@ -110,14 +110,11 @@
       _.each(this.collection.models, function(comment){
         t = _.template($("#commented-template").html());
         $("#commented").append(t(comment.toJSON()));
-        //comment.get("how").comment);
       });
 
-      // content = this.model.toJSON()["how"]["comment"];
-      // $(this.el).append(this.template({content:content}));
     },
     reply: function(e){
-      var rep = new Comment({how:{replyTo:$(e.currentTarget).attr('for')}});
+      var rep = new Comment({'how':{'replyTo':$(e.currentTarget).attr('for')}});
       $(e.currentTarget).parent().after("<div class='comment-reply'></div>");
       el = $("#commented .comment-reply");
       new CommentView({model: rep, el:el });
@@ -148,14 +145,12 @@
           this.set({"who":username});
           $(".modal").modal('toggle');
           this.save(null,{success:function(model){
-          C.comments.add(model);
-          $("textarea.form-control").val(""); //Reset the view to have no content.
+            C.comments.add(model);
+            $("textarea.form-control").val(""); //Reset the view to have no content.
           }
-        });
+                         });
 
-        }}).then(function(){
-
-        });
+        }});
 
     }
   });
