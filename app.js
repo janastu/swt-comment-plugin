@@ -4,9 +4,10 @@
     // C.CommentView = CommentView; //Expose the API to window.
     // C.Comment = Comment;
     /* Create a empty model and view */
+    C.comment = new Comment();
     C.comments = new Comments();
-    C.cv = new PostedCommentView({collection: C.comments});
-    new CommentView({model: new Comment()});
+    C.cv = new CommentView({collection: C.comments});
+    C.comments.add(C.comment);
   };
   var Comment = Backbone.Model.extend({
     /* A model representing a comment. */
@@ -72,16 +73,26 @@
 
   var CommentView = Backbone.View.extend({
     el: $("#comments"),
-    template: _.template($("#comment-template").html()),
+    template: _.template($("#commented-template").html()),
+    edit_template: _.template($("#comment-template").html()),
     events:{
-      "click .save": "save"
+      "click .save": "save",
+      "click .comment button": "reply"
     },
     initialize: function() {
-      this.render();
+      this.listenTo(this.collection, "add", this.render);
     },
 
-    render: function(el) {
-      $(this.el).append(this.template(this.model.toJSON()));
+    render: function(model) {
+    console.log(model);
+      if(model.get('how')['comment'].length) {
+        $(this.el).append(this.template(model.toJSON()));
+      }
+      else {
+        $(this.el).append(this.edit_template(model.toJSON()));
+      }
+
+
     },
 
     save: function(e) {
@@ -93,34 +104,16 @@
       this.model.set({created: new Date().toUTCString().substr(0, 25)});
       new LoginView({model:this.model});
 
-    }
-  });
-
-  var PostedCommentView = Backbone.View.extend({
-    el: "#commented",
-    events: {
-      "click button": "reply"
-    },
-    template: _.template($("#commented-template").html()),
-    initialize: function() {
-      this.listenTo(this.collection, "add", this.render);
-      this.render();
-    },
-    render: function(el) {
-      _.each(this.collection.models, function(comment) {
-        console.log(comment);
-        $(this.el).append(this.template(comment.toJSON()));
-      }, this);
-
     },
     reply: function(e) {
-      var rep = new Comment({'how':{'replyTo':$(e.currentTarget).attr('for')}});
-      $(e.currentTarget).parent().after("<div class='comment-reply'></div>");
-      var el = $("#commented .comment-reply");
-      new CommentView({model: rep, el:el });
+      e.preventDefault();
+      var rep = new Comment();
+      rep.set({'how':{'replyTo':$(e.currentTarget).attr('for'),
+                     'comment':''}});
+      C.comments.add(rep);
     }
-
   });
+
   var LoginView = Backbone.View.extend({
     el: ".modal",
     events:{
@@ -148,8 +141,8 @@
             C.comments.add(model);
             $("textarea.form-control").val(""); //Reset the view to have no content.
           }
-        });
-      }});
+                         });
+        }});
     }
   });
 
