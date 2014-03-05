@@ -18,6 +18,9 @@
       };
     },
     initialize: function() {
+    },
+    isValid: function() {
+      return true;
     }
   });
   var Comment = Backbone.Model.extend({
@@ -108,7 +111,7 @@
     render: function() {
       if(this.model.get('how').get('comment').length) {
         if(this.model.get('how').get('replyTo').length) {
-          var item = '#' + this.model.get('how')['replyTo'];
+          var item = '#' + this.model.get('how').get('replyTo');
           var el = $(item).parent();
           $(el).append(this.template(this.model.toJSON()));
         }
@@ -182,9 +185,9 @@
 
     },
     showOne: function(model) {
-      if(model.get('how').isNew === undefined) {
-        console.log(model);
+      if(model.get('how').isValid === undefined) {
         model.set({'how': new How(model.get('how'))});
+        console.log(model);
       }
       var view = new CommentView({model:model});
       $(this.el).append(view.render().el);
