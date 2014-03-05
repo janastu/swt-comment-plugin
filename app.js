@@ -35,8 +35,7 @@
     initialize: function() {
     },
     toJSON: function() {
-      how = this.get('how').toJSON();
-      return this;
+      return JSON.parse(JSON.stringify(this.attributes));
     }
   });
 
