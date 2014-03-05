@@ -1,34 +1,46 @@
 (function(C) {
 
   C.init = function() {
-    // C.CommentView = CommentView; //Expose the API to window.
-    // C.Comment = Comment;
     /* Create a empty model and view */
-    C.comment = new Comment();
-    C.comments = new Comments();
-    C.cv = new CommentView({collection: C.comments});
-    C.comments.add(C.comment);
+    C.comment = new Comment({'how': new How()});
+    C.comments = new Sweets();
+    /* Create the app, the app sets up event handler for the Comments collection */
+    var App = new AppView;
+
+    C.comments.add(C.comment); //Add the empty model to the collection.
+
   };
+  var How = Backbone.Model.extend({
+    defaults: {
+        'comment':'',
+        'replyTo':''
+    },
+    initialize: function() {
+    }
+  });
   var Comment = Backbone.Model.extend({
     /* A model representing a comment. */
+    url: function() {
+        return C.url + C.sweet;
+      },
     defaults: function() {
       return {
         'who':'',
-        'what': C.what,
+        'what':C.what,
         'where': window.location.href,
-        'how':{
-          'comment':'',
-          'replyTo':''
-        }
+        'how': ''
       };
     },
-    url: "http://127.0.0.1:5001/sweets",
+
     initialize: function() {
-      this.set({"what": C.what});
+    },
+    toJSON: function() {
+      how = this.get('how').toJSON();
+      return this;
     }
   });
 
-  var Comments = Backbone.Collection.extend({
+  var Sweets = Backbone.Collection.extend({
     model: Comment,
     url: C.url + C.sweet,
     initialize: function() {
@@ -71,27 +83,43 @@
 
   });
 
+  // var Sweets = Backbone.Collection.extend({
+  //   model: Comment,
+  //   url: C.url + C.get + '?what=' + C.what,
+  //   initialize: function() {
+  //     this.sync('read', this, {
+  //       url: this.url
+  //     });
+  //   }
+  // });
   var CommentView = Backbone.View.extend({
-    el: $("#comments"),
+    tagName: 'div',
     template: _.template($("#commented-template").html()),
     edit_template: _.template($("#comment-template").html()),
     events:{
       "click .save": "save",
       "click .comment button": "reply"
     },
-    initialize: function() {
-      this.listenTo(this.collection, "add", this.render);
-    },
+    intialize: function() {
+      this.listenTo(this.model, "save", this.render);
 
-    render: function(model) {
-    console.log(model);
-      if(model.get('how')['comment'].length) {
-        $(this.el).append(this.template(model.toJSON()));
+    },
+    render: function() {
+      if(this.model.get('how').get('comment').length) {
+        if(this.model.get('how').get('replyTo').length) {
+          var item = '#' + this.model.get('how')['replyTo'];
+          var el = $(item).parent();
+          $(el).append(this.template(this.model.toJSON()));
+        }
+        else{
+          console.log(this.model.toJSON());
+          $(this.el).append(this.template(this.model.toJSON()));
+        }
       }
       else {
-        $(this.el).append(this.edit_template(model.toJSON()));
+        $(this.el).append(this.edit_template(this.model.toJSON()));
       }
-
+      return this;
 
     },
 
@@ -99,17 +127,15 @@
       /* Create a sweet and send it to the sweet store.
        Update the view to include the comment */
       e.preventDefault();
-      this.model.set({'how':{'comment':this.$("textarea.form-control").val(),
-                             'replyTo':this.model.get('how')['replyTo']}});
+      this.model.set({'how': new How({'comment':this.$("textarea.form-control").val()})});
       this.model.set({created: new Date().toUTCString().substr(0, 25)});
       new LoginView({model:this.model});
 
     },
     reply: function(e) {
+      e.stopPropagation();
       e.preventDefault();
-      var rep = new Comment();
-      rep.set({'how':{'replyTo':$(e.currentTarget).attr('for'),
-                     'comment':''}});
+      var rep = new Comment({'how': new How({'replyTo':$(e.currentTarget).attr('for')})});
       C.comments.add(rep);
     }
   });
@@ -130,7 +156,7 @@
       var password = $("#password").val();
 
       $.ajax({
-        url: "http://127.0.0.1:5001/authenticate",
+        url: C.url + C.auth,
         type: 'POST',
         data: {user: username, hash: password},
         context: this.model,
@@ -144,6 +170,20 @@
                          });
         }});
     }
+  });
+
+  var AppView = Backbone.View.extend({
+    el: $("#comments"),
+    initialize: function() {
+      this.listenTo(C.comments, "add", this.showOne);
+
+    },
+    showOne: function(model) {
+      model.set({'how': new How(model.get('how'))});
+      var view = new CommentView({model:model});
+      $(this.el).append(view.render().el);
+    }
+
   });
 
 })(C);
