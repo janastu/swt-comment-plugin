@@ -11,9 +11,11 @@
 
   };
   var How = Backbone.Model.extend({
-    defaults: {
+    defaults: function() {
+      return {
         'comment':'',
         'replyTo':''
+      };
     },
     initialize: function() {
     }
@@ -126,7 +128,9 @@
       /* Create a sweet and send it to the sweet store.
        Update the view to include the comment */
       e.preventDefault();
-      this.model.set({'how': new How({'comment':this.$("textarea.form-control").val()})});
+
+      this.model.get('how').set({'comment':this.$("textarea.form-control").val()});
+      console.log(this.model.get('how'));
       this.model.set({created: new Date().toUTCString().substr(0, 25)});
       new LoginView({model:this.model});
 
@@ -178,7 +182,10 @@
 
     },
     showOne: function(model) {
-      model.set({'how': new How(model.get('how'))});
+      if(model.get('how').isNew === undefined) {
+        console.log(model);
+        model.set({'how': new How(model.get('how'))});
+      }
       var view = new CommentView({model:model});
       $(this.el).append(view.render().el);
     }
