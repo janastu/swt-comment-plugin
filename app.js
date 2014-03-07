@@ -85,17 +85,21 @@
       });
     },
     comparator: function(model1, model2) {
-      if(model1.get('created') < model2.get('created') &&
-      model1.get('how')['replyTo'] == model2.get('how')['replyTo']) {
-        console.log(model1, model2);
+      if((new Date(model1.get('created')) <  new Date(model2.get('created')))){
         return 1;
+        }
+        else{
+          return -1;
+        }
       }
-    }
+
   });
 
   var CommentView = Backbone.View.extend({
-    el: $("#comments-container"),
     tagName: 'div',
+    attributes: {
+      'class':'comments'
+    },
     template: _.template($("#commented-template").html()),
     edit_template: _.template($("#comment-template").html()),
     events:{
@@ -103,12 +107,12 @@
       "click .comment button": "reply"
     },
     initialize: function() {
+
       if(this.model.get('how').get('replyTo').length) {
         var item = '#' + this.model.get('how').get('replyTo');
         this.setElement($(item));
         }
-      // this.listenTo(this.model.collection, "add", this.render);
-      this.render();
+      // this.render();
     },
     render: function() {
       if(this.model.isNew()) {
@@ -118,8 +122,8 @@
         $(this.el).append(this.template(this.model.toJSON()));
 
       }
-
-     },
+      return this;
+    },
 
     save: function(e) {
       /* Create a sweet and send it to the sweet store.
@@ -172,6 +176,7 @@
   });
 
   var AppView = Backbone.View.extend({
+    el: $("#comments-container"),
     initialize: function() {
       this.listenTo(C.comments, "add", this.showOne);
 
@@ -181,7 +186,7 @@
         model.set({'how': new How(model.get('how'))});
       }
       var view = new CommentView({model:model});
-
+      $(this.el).prepend(view.render().el);
     }
 
   });
